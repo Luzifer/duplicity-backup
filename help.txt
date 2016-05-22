@@ -1,0 +1,22 @@
+Wrapper around duplicity to create backup with less hazzle
+
+Usage:
+  duplicity-backup [command]
+
+Available Commands:
+  backup                        Create backup according to the backup rules
+  cleanup                       Delete the extraneous duplicity files
+  list-current-files            Lists the files contained in the backup
+  restore [file path] [target]  Restores single file / dir to target directory
+  restore [target]              Restores everything to target directory
+  status                        Summarize the status of the backup repository
+  verify                        Compares backup contents against local files
+
+Flags:
+  --config-file / -f            Configuration for this duplicity wrapper
+                                (Default: ~/.config/duplicity-backup.yaml)
+  --lock-file / -l              File to hold the lock for this wrapper execution
+                                (Default: ~/.config/duplicity-backup.lock)
+  --debug / -d                  Print duplicity commands to output
+  --drt-run / -n                Do a test-run without changes
+  --version                     Prints the current program version and exits

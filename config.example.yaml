@@ -1,0 +1,172 @@
+###
+# Backup source
+###
+#
+# Root of the backup to create. If no explicit excludes or includes are
+# defined all files inside this directory will be backed up.
+root: /home
+
+# Hostname for notifications (if left out the hostname of the machine
+# is used for this.
+#hostname: mystation
+
+###
+# Backup destination
+###
+#
+# Destination for the backup. Check the duplicity man-page for all
+# possible destinations to use. 
+dest: s3+http://foobar-backup-bucket/backup-folder/
+
+# Some examples of destinations usable for your backup:
+#dest: ftp://user[:password]@other.host[:port]/some_dir
+#dest: rsync://user@host.com[:port]//absolute_path
+#dest: ssh://user[:password]@other.host[:port]/[/]some_dir
+
+# The "ftp_password" is used for several backends despite the options
+# name. You can use this option instead of passing the password in the
+# `dest` parameter as that one is visible in the process list during
+# the backup is running.
+#ftp_password: password
+
+###
+# Amazon WebServices S3 configuration
+###
+#
+# Uncomment the lines in this section if you're using Amazon S3
+aws:
+#  access_key_id: foobar_aws_key_id
+#  secret_access_key: foobar_aws_access_key
+
+# Without setting the storage class the standard storage is used. With
+# this option you can switch to "infrequent access" (--s3-use-ia) or
+# "reduced redundancy" (--s3-use-rrs) storage class.
+#  storage_class: --s3-use-ia
+
+###
+# Google Cloud Storage configuration
+###
+#
+# Uncomment the lines in this section if you're using GCS
+google_cloud:
+#  access_key_id: foobar_gcs_key_id
+#  secret_access_key: foobar_gcs_secret_id
+
+###
+# OpenStack Object Storage (Swift) configuration
+###
+#
+# Uncomment the lines in this section if you're using OpenStack
+swift:
+#  username: foobar_swift_tenant:foobar_swift_username
+#  password: foobar_swift_password
+#  auth_url: foobar_swift_authurl
+#  auth_version: 2
+
+###
+# Include list of directories
+###
+#
+# Specify directories inside your `root` to backup only these ones
+# You can't specify directories outside the root. If you want to backup
+# all the data inside the root leave this list empty.
+inclist:
+  - /home/myuser/projects
+
+###
+# Exclude list of directories
+###
+#
+# Specify directories inside your `root` to exclude these ones
+# You can't specify directories outside the root. If you want to backup
+# all the data inside the root leave this list empty.
+exclist:
+  - /home/muser/projects/testproject
+
+###
+# Other file selection options
+###
+# 
+# Instead managing the inclist / exclist parameters in this file you
+# can write a text file containing lines with +/- patterns to include
+# or exclude files and directories from the backup.
+# See http://duplicity.nongnu.org/duplicity.1.html#sect9 for details
+#incexcfile: /home/myuser/.config/backup-files.txt
+
+# Exclude all device files. This can be useful for security/permissions
+# reasons or if rdiff-backup is not handling device files correctly.
+#excdevicefiles: true
+
+###
+# Encryption configuration
+###
+#
+encryption:
+# Enable / disable encryption of your backup. If you enable encryption
+# you either need to specify a password or a GPG key.
+  enable: true
+
+# If you're using a `gpg_sign_key` to sign your backup this password is
+# used to unlock the GPG key. If you're not using a GPG key it is used
+# to symmetrically encrypt the backup.
+  passphrase: foobar_gpg_passphrase
+
+# Specify the GPG key(s) to use for encryption / signing the backup.
+# You may use different keys for those tasks. If you specify a signing
+# key you need to specify the password above to unlock the key.
+#  gpg_encryption_key: foobar_gpg_key
+#  gpg_sign_key: foobar_gpg_key
+
+# If you want to hide the GPG key IDs for security reasons you can
+# enable this option.
+#  hide_key_id: true
+
+# You can specify the keyring which contains your above specified keys
+# in case they are not present in the default keyring.
+#  secret_keyring: /home/myuser/.gnupg/duplicity.gpg
+
+###
+# Static backup options
+###
+#
+# Here you can specify other options for duplicity not handled in this
+# configuration file. Reference is the manpage of duplicity. Please
+# ensure you're specifying the options in command array format.
+static_options: ["--full-if-older-than", "14D", "--s3-use-new-style"]
+
+###
+# Backup cleanup options
+###
+#
+cleanup:
+# Chose the cleanup type and the configured value for that cleanup type:
+# remove-older-than <time>
+# remove-all-but-n-full <count>
+# remove-all-inc-of-but-n-full <count>
+# none
+  type: remove-all-but-n-full
+  value: 4
+
+###
+# Logging
+###
+#
+# Set the directory the logs are written to
+logdir: /tmp/duplicity/
+
+###
+# Nofification configuration
+###
+#
+# Uncomment and configure your preferred notification channel
+notifications:
+#  slack:
+#    hook_url: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+#    channel: "#general"
+#    username: duplicity-backup
+#    emoji: :package:
+#  mondash:
+#    board: yourboardurl
+#    token: yoursecrettoken
+#    metric: duplicity backup (%h)
+#    instance: https://mondash.org/
