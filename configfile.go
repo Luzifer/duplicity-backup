@@ -207,7 +207,7 @@ func (c *configFile) generateCredentialExport() (env []string) {
 		env = append(env, "SWIFT_USERNAME="+c.Swift.Username)
 		env = append(env, "SWIFT_PASSWORD="+c.Swift.Password)
 		env = append(env, "SWIFT_AUTHURL="+c.Swift.AuthURL)
-		env = append(env, "SWIFT_AUTHVERSION="+strconv.FormatInt(int64(c.Swift.AuthVersion), 10))
+		env = append(env, "SWIFT_AUTHVERSION="+strconv.Itoa(c.Swift.AuthVersion))
 	}
 	if c.FTPPassword != "" {
 		env = append(env, "FTP_PASSWORD="+c.FTPPassword)

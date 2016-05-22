@@ -11,7 +11,7 @@ test:
 		ginkgo
 		gometalinter \
 				--cyclo-over=15 \
-				--deadline=10s \
+				--deadline=20s \
 				--exclude=bindata.go \
 				--exclude=configfile_test.go \
 				-D errcheck
