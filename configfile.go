@@ -108,7 +108,11 @@ func loadConfigFile(in io.Reader) (*configFile, error) {
 		return nil, err
 	}
 
-	res := &configFile{}
+	hostname, _ := os.Hostname()
+
+	res := &configFile{
+		Hostname: hostname,
+	}
 	if err := yaml.Unmarshal(fileContent, res); err != nil {
 		return nil, err
 	}
