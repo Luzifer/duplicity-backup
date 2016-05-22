@@ -34,7 +34,7 @@ type configFile struct {
 	} `yaml:"swift"`
 	Include            []string `yaml:"inclist"`
 	Exclude            []string `yaml:"exclist"`
-	IncExcFile         string   `yaml:"incexcfile"`
+	IncExcFile         string   `yaml:"incexcfile" valid:"customFileExistsValidator,required"`
 	ExcludeDeviceFiles bool     `yaml:"excdevicefiles"`
 	Encryption         struct {
 		Enable           bool   `yaml:"enable"`
@@ -66,6 +66,17 @@ type configFile struct {
 	} `yaml:"notifications"`
 }
 
+func init() {
+	valid.CustomTypeTagMap.Set("customFileExistsValidator", valid.CustomTypeValidator(func(i interface{}, context interface{}) bool {
+		switch v := i.(type) { // this validates a field against the value in another field, i.e. dependent validation
+		case string:
+			_, err := os.Stat(v)
+			return v == "" || err == nil
+		}
+		return false
+	}))
+}
+
 func (c *configFile) validate() error {
 	result, err := valid.ValidateStruct(c)
 	if !result || err != nil {
@@ -86,10 +97,6 @@ func (c *configFile) validate() error {
 
 	if c.Destination[0:2] == "gs" && (c.GoogleCloud.AccessKeyID == "" || c.GoogleCloud.SecretAccessKey == "") {
 		return errors.New("Destination is S3 but AWS credentials are not configured")
-	}
-
-	if _, err := os.Stat(c.IncExcFile); c.IncExcFile != "" && err == os.ErrNotExist {
-		return errors.New("Specified incexcfile does not exist")
 	}
 
 	return nil
@@ -124,14 +131,14 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 		dest = c.Destination
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
 	case "cleanup":
-		option = "cleanup"
+		option = command
 		commandLine, env, err = c.generateLiteCommand(option, time, addTime)
 	case "list-current-files":
-		option = "list-current-files"
+		option = command
 		commandLine, env, err = c.generateLiteCommand(option, time, addTime)
 	case "restore":
 		addTime = true
-		option = "restore"
+		option = command
 		root = c.Destination
 		restoreFile := ""
 
@@ -150,7 +157,7 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 		option = "collection-status"
 		commandLine, env, err = c.generateLiteCommand(option, time, addTime)
 	case "verify":
-		option = "verify"
+		option = command
 		root = c.Destination
 		dest = c.RootPath
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
