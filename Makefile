@@ -17,4 +17,4 @@ test:
 				-D errcheck
 
 install:
-		go install -ldflags "-X main.version=$(shell git describe --tags || git rev-parse --short HEAD || echo dev)"
+		go install -a -ldflags "-X main.version=$(shell git describe --tags || git rev-parse --short HEAD || echo dev)"

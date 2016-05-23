@@ -8,7 +8,7 @@ type messageChanWriter struct {
 	buffer []byte
 }
 
-func NewMessageChanWriter(outputChannel chan string) *messageChanWriter {
+func newMessageChanWriter(outputChannel chan string) *messageChanWriter {
 	return &messageChanWriter{
 		msgChan: outputChannel,
 		buffer:  []byte{},

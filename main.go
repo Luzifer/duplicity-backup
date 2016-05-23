@@ -168,7 +168,7 @@ func execute(config *configFile, argv []string) error {
 		}
 	}(msgChan)
 
-	output := NewMessageChanWriter(msgChan)
+	output := newMessageChanWriter(msgChan)
 	cmd := exec.Command(duplicityBinary, commandLine...)
 	cmd.Stdout = output
 	cmd.Stderr = output
