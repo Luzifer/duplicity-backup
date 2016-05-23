@@ -114,6 +114,11 @@ func main() {
 	defer lock.Unlock()
 
 	if err := execute(config, argv[1:]); err != nil {
+		if err := config.Notify(false, fmt.Errorf("Could not create backup: %s", err)); err != nil {
+			logf("[ERR] Error sending notifications: %s", err)
+		} else {
+			logf("[INF] Notifications sent")
+		}
 		return
 	}
 
@@ -121,8 +126,20 @@ func main() {
 		logf("++++ Starting removal of old backups")
 
 		if err := execute(config, []string{"__remove_old"}); err != nil {
+			if err := config.Notify(false, fmt.Errorf("Could not cleanup backup: %s", err)); err != nil {
+				logf("[ERR] Error sending notifications: %s", err)
+			} else {
+				logf("[INF] Notifications sent")
+			}
+
 			return
 		}
+	}
+
+	if err := config.Notify(true, nil); err != nil {
+		logf("[ERR] Error sending notifications: %s", err)
+	} else {
+		logf("[INF] Notifications sent")
 	}
 
 	logf("++++ Backup finished successfully")
@@ -130,13 +147,18 @@ func main() {
 
 func execute(config *configFile, argv []string) error {
 	var (
-		err              error
-		commandLine, env []string
+		err                 error
+		commandLine, tmpEnv []string
 	)
-	commandLine, env, err = config.GenerateCommand(argv, cfg.RestoreTime)
+	commandLine, tmpEnv, err = config.GenerateCommand(argv, cfg.RestoreTime)
 	if err != nil {
 		logf("[ERR] %s", err)
 		return err
+	}
+
+	env := envListToMap(os.Environ())
+	for k, v := range envListToMap(tmpEnv) {
+		env[k] = v
 	}
 
 	// Ensure duplicity is talking to us
@@ -154,7 +176,7 @@ func execute(config *configFile, argv []string) error {
 	cmd := exec.Command(duplicityBinary, commandLine...)
 	cmd.Stdout = output
 	cmd.Stderr = output
-	cmd.Env = env
+	cmd.Env = envMapToList(env)
 	err = cmd.Run()
 
 	logf("%s", output.String())
@@ -165,4 +187,25 @@ func execute(config *configFile, argv []string) error {
 	}
 
 	return err
+}
+
+func envListToMap(list []string) map[string]string {
+	out := map[string]string{}
+	for _, entry := range list {
+		if len(entry) == 0 || entry[0] == '#' {
+			continue
+		}
+
+		parts := strings.SplitN(entry, "=", 2)
+		out[parts[0]] = parts[1]
+	}
+	return out
+}
+
+func envMapToList(envMap map[string]string) []string {
+	out := []string{}
+	for k, v := range envMap {
+		out = append(out, k+"="+v)
+	}
+	return out
 }

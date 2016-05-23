@@ -166,7 +166,6 @@ notifications:
 #    username: duplicity-backup
 #    emoji: :package:
 #  mondash:
-#    board: yourboardurl
+#    board: https://mondash.org/yourboardurl
 #    token: yoursecrettoken
-#    metric: duplicity backup (%h)
-#    instance: https://mondash.org/
+#    freshness: 3600

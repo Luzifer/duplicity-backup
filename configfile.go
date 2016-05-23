@@ -58,10 +58,9 @@ type configFile struct {
 			Emoji    string `yaml:"emoji"`
 		} `yaml:"slack"`
 		MonDash struct {
-			Board    string `yaml:"board"`
-			Token    string `yaml:"token"`
-			Metric   string `yaml:"metric"`
-			Instance string `yaml:"instance"`
+			BoardURL  string `yaml:"board"`
+			Token     string `yaml:"token"`
+			Freshness int64  `yaml:"freshness"`
 		} `yaml:"mondash"`
 	} `yaml:"notifications"`
 }
