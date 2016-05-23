@@ -1,3 +1,7 @@
+# 0.4.1 / 2016-05-23
+
+  * Fix: Unexported constructor for private struct
+
 # 0.4.0 / 2016-05-23
 
   * Added version writing to install / gobuilder
