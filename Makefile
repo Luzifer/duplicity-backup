@@ -15,3 +15,6 @@ test:
 				--exclude=bindata.go \
 				--exclude=configfile_test.go \
 				-D errcheck
+
+install:
+		go install -ldflags "-X main.version=$(shell git describe --tags || git rev-parse --short HEAD || echo dev)"
