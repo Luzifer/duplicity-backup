@@ -1,3 +1,8 @@
+# 0.4.0 / 2016-05-23
+
+  * Added version writing to install / gobuilder
+  * Provide live output for duplicity
+
 # 0.3.0 / 2016-05-23
 
   * Do backup removes only after certain commands
