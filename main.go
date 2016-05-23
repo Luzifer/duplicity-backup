@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -162,14 +161,22 @@ func execute(config *configFile, argv []string) error {
 		logf("[DBG] Command: %s %s", duplicityBinary, strings.Join(commandLine, " "))
 	}
 
-	output := bytes.NewBuffer([]byte{})
+	msgChan := make(chan string, 10)
+	go func(c chan string) {
+		for l := range c {
+			logf(l)
+		}
+	}(msgChan)
+
+	output := NewMessageChanWriter(msgChan)
 	cmd := exec.Command(duplicityBinary, commandLine...)
 	cmd.Stdout = output
 	cmd.Stderr = output
 	cmd.Env = envMapToList(env)
 	err = cmd.Run()
 
-	logf("%s", output.String())
+	close(msgChan)
+
 	if err != nil {
 		logf("[ERR] Execution of duplicity command was unsuccessful! (exit-code was non-zero)")
 	} else {
