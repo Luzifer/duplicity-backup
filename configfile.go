@@ -13,13 +13,15 @@ import (
 )
 
 const (
-	commandBackup  = "backup"
-	commandCleanup = "cleanup"
-	commandList    = "list-current-files"
-	commandRestore = "restore"
-	commandStatus  = "status"
-	commandVerify  = "verify"
-	commandRemove  = "__remove_old"
+	commandBackup     = "backup"
+	commandFullBackup = "full"
+	commandIncrBackup = "incr"
+	commandCleanup    = "cleanup"
+	commandList       = "list-current-files"
+	commandRestore    = "restore"
+	commandStatus     = "status"
+	commandVerify     = "verify"
+	commandRemove     = "__remove_old"
 )
 
 var (
@@ -151,6 +153,16 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 	switch command {
 	case commandBackup:
 		option = ""
+		root = c.RootPath
+		dest = c.Destination
+		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
+	case commandFullBackup:
+		option = command
+		root = c.RootPath
+		dest = c.Destination
+		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
+	case commandIncrBackup:
+		option = command
 		root = c.RootPath
 		dest = c.Destination
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
