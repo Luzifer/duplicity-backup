@@ -105,7 +105,7 @@ func main() {
 	}
 	defer logFile.Close()
 
-	logf("\n++++ duplicity-backup %s started with command '%s'", version, argv[1])
+	logf("++++ duplicity-backup %s started with command '%s'", version, argv[1])
 
 	if err := lock.TryLock(); err != nil {
 		logf("Could not aquire lock: %s", err)
