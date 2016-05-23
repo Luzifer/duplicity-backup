@@ -1,3 +1,8 @@
+# 0.5.0 / 2016-05-23
+
+  * Added more tests, fixed some linter errors
+  * Support forcing a full backup
+
 # 0.4.1 / 2016-05-23
 
   * Fix: Unexported constructor for private struct
