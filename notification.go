@@ -5,9 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/Luzifer/go_helpers/str"
 )
 
-func (c *configFile) Notify(success bool, err error) error {
+func (c *configFile) Notify(command string, success bool, err error) error {
+	if !str.StringInSlice(command, notifyCommands) {
+		return nil
+	}
+
 	errs := []error{}
 
 	for _, n := range []func(bool, error) error{
@@ -21,17 +27,17 @@ func (c *configFile) Notify(success bool, err error) error {
 
 	if len(errs) == 0 {
 		return nil
-	} else {
-		estr := ""
-		for _, e := range errs {
-			if e == nil {
-				continue
-			}
-
-			estr = fmt.Sprintf("%s\n- %s", estr, e)
-		}
-		return fmt.Errorf("%d notifiers failed:%s", len(errs), estr)
 	}
+
+	estr := ""
+	for _, e := range errs {
+		if e == nil {
+			continue
+		}
+
+		estr = fmt.Sprintf("%s\n- %s", estr, e)
+	}
+	return fmt.Errorf("%d notifiers failed:%s", len(errs), estr)
 }
 
 type mondashResult struct {
@@ -64,7 +70,7 @@ func (c *configFile) notifyMonDash(success bool, err error) error {
 	}
 
 	buf := bytes.NewBuffer([]byte{})
-	if err := json.NewEncoder(buf).Encode(monitoringResult); err != nil {
+	if err = json.NewEncoder(buf).Encode(monitoringResult); err != nil {
 		return err
 	}
 
@@ -114,7 +120,7 @@ func (c *configFile) notifySlack(success bool, err error) error {
 	}
 
 	buf := bytes.NewBuffer([]byte{})
-	if err := json.NewEncoder(buf).Encode(sr); err != nil {
+	if err = json.NewEncoder(buf).Encode(sr); err != nil {
 		return err
 	}
 

@@ -114,29 +114,18 @@ func main() {
 	defer lock.Unlock()
 
 	if err := execute(config, argv[1:]); err != nil {
-		if err := config.Notify(false, fmt.Errorf("Could not create backup: %s", err)); err != nil {
-			logf("[ERR] Error sending notifications: %s", err)
-		} else {
-			logf("[INF] Notifications sent")
-		}
 		return
 	}
 
 	if config.Cleanup.Type != "none" {
 		logf("++++ Starting removal of old backups")
 
-		if err := execute(config, []string{"__remove_old"}); err != nil {
-			if err := config.Notify(false, fmt.Errorf("Could not cleanup backup: %s", err)); err != nil {
-				logf("[ERR] Error sending notifications: %s", err)
-			} else {
-				logf("[INF] Notifications sent")
-			}
-
+		if err := execute(config, []string{commandRemove}); err != nil {
 			return
 		}
 	}
 
-	if err := config.Notify(true, nil); err != nil {
+	if err := config.Notify(argv[1], true, nil); err != nil {
 		logf("[ERR] Error sending notifications: %s", err)
 	} else {
 		logf("[INF] Notifications sent")
@@ -184,6 +173,14 @@ func execute(config *configFile, argv []string) error {
 		logf("[ERR] Execution of duplicity command was unsuccessful! (exit-code was non-zero)")
 	} else {
 		logf("[INF] Execution of duplicity command was successful.")
+	}
+
+	if err != nil {
+		if nErr := config.Notify(argv[0], false, fmt.Errorf("Could not create backup: %s", err)); nErr != nil {
+			logf("[ERR] Error sending notifications: %s", nErr)
+		} else {
+			logf("[INF] Notifications sent")
+		}
 	}
 
 	return err

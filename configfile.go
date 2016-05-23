@@ -12,6 +12,23 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	commandBackup  = "backup"
+	commandCleanup = "cleanup"
+	commandList    = "list-current-files"
+	commandRestore = "restore"
+	commandStatus  = "status"
+	commandVerify  = "verify"
+	commandRemove  = "__remove_old"
+)
+
+var (
+	notifyCommands = []string{
+		commandBackup,
+		commandRemove,
+	}
+)
+
 type configFile struct {
 	RootPath    string `yaml:"root" valid:"required"`
 	Hostname    string `yaml:"hostname"`
@@ -128,18 +145,18 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 	)
 
 	switch command {
-	case "backup":
+	case commandBackup:
 		option = ""
 		root = c.RootPath
 		dest = c.Destination
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
-	case "cleanup":
+	case commandCleanup:
 		option = command
 		commandLine, env, err = c.generateLiteCommand(option, time, addTime)
-	case "list-current-files":
+	case commandList:
 		option = command
 		commandLine, env, err = c.generateLiteCommand(option, time, addTime)
-	case "restore":
+	case commandRestore:
 		addTime = true
 		option = command
 		root = c.Destination
@@ -156,15 +173,15 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 		}
 
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, restoreFile)
-	case "status":
+	case commandStatus:
 		option = "collection-status"
 		commandLine, env, err = c.generateLiteCommand(option, time, addTime)
-	case "verify":
+	case commandVerify:
 		option = command
 		root = c.Destination
 		dest = c.RootPath
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
-	case "__remove_old":
+	case commandRemove:
 		commandLine, env, err = c.generateRemoveCommand()
 	default:
 		err = fmt.Errorf("Did not understand command '%s', please see 'help' for details what to do.", command)
