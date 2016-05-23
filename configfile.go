@@ -27,6 +27,10 @@ var (
 		commandBackup,
 		commandRemove,
 	}
+	removeCommands = []string{
+		commandBackup,
+		commandCleanup,
+	}
 )
 
 type configFile struct {

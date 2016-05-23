@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Luzifer/go_helpers/str"
 	"github.com/Luzifer/go_helpers/which"
 	"github.com/Luzifer/rconfig"
 	"github.com/mitchellh/go-homedir"
@@ -117,7 +118,7 @@ func main() {
 		return
 	}
 
-	if config.Cleanup.Type != "none" {
+	if config.Cleanup.Type != "none" && str.StringInSlice(argv[1], removeCommands) {
 		logf("++++ Starting removal of old backups")
 
 		if err := execute(config, []string{commandRemove}); err != nil {
