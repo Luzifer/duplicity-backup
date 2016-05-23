@@ -144,7 +144,7 @@ func loadConfigFile(in io.Reader) (*configFile, error) {
 
 func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []string, env []string, err error) {
 	var (
-		tmpArg, tmpEnv     []string
+		tmpEnv             []string
 		option, root, dest string
 		addTime            bool
 		command            = argv[0]
@@ -208,24 +208,18 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 	tmpEnv = c.generateCredentialExport()
 	env = append(env, tmpEnv...)
 
-	// Clean empty entries from the list
-	tmpArg = []string{}
-	tmpEnv = []string{}
+	commandLine = c.cleanSlice(commandLine)
+	env = c.cleanSlice(env)
 
-	for _, i := range commandLine {
+	return
+}
+
+func (c *configFile) cleanSlice(in []string) (out []string) {
+	for _, i := range in {
 		if i != "" {
-			tmpArg = append(tmpArg, i)
+			out = append(out, i)
 		}
 	}
-
-	for _, i := range env {
-		if i != "" {
-			tmpEnv = append(tmpEnv, i)
-		}
-	}
-
-	commandLine = tmpArg
-	env = tmpEnv
 
 	return
 }

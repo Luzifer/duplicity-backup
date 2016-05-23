@@ -71,6 +71,64 @@ logdir: /var/log/duplicity/
 		})
 	})
 
+	Context("Incremental backup with given config", func() {
+		BeforeEach(func() {
+			argv = []string{"incr"}
+		})
+
+		It("should not have errored", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should have exported secrets in ENV variables", func() {
+			Expect(env).To(Equal([]string{
+				"PASSPHRASE=5pJZqnzrmFSi1wqZtcUh",
+				"AWS_ACCESS_KEY_ID=AKIAJKCC13246798732A",
+				"AWS_SECRET_ACCESS_KEY=Oosdkfjadgiuagbiajbgaliurtbjsbfgaldfbgdf",
+			}))
+		})
+
+		It("should have generated the expected commandLine", func() {
+			Expect(commandLine).To(Equal([]string{
+				"incr",
+				"--full-if-older-than", "7D",
+				"--s3-use-new-style",
+				"--include=/data",
+				"--exclude=**",
+				"/", "s3+http://my-backup/myhost/",
+			}))
+		})
+	})
+
+	Context("Forced full backup with given config", func() {
+		BeforeEach(func() {
+			argv = []string{"full"}
+		})
+
+		It("should not have errored", func() {
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should have exported secrets in ENV variables", func() {
+			Expect(env).To(Equal([]string{
+				"PASSPHRASE=5pJZqnzrmFSi1wqZtcUh",
+				"AWS_ACCESS_KEY_ID=AKIAJKCC13246798732A",
+				"AWS_SECRET_ACCESS_KEY=Oosdkfjadgiuagbiajbgaliurtbjsbfgaldfbgdf",
+			}))
+		})
+
+		It("should have generated the expected commandLine", func() {
+			Expect(commandLine).To(Equal([]string{
+				"full",
+				"--full-if-older-than", "7D",
+				"--s3-use-new-style",
+				"--include=/data",
+				"--exclude=**",
+				"/", "s3+http://my-backup/myhost/",
+			}))
+		})
+	})
+
 	Context("auto-removal with given config", func() {
 		BeforeEach(func() {
 			argv = []string{"__remove_old"}
