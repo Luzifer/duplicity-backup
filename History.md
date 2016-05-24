@@ -1,3 +1,7 @@
+# 0.5.1 / 2016-05-24
+
+  * Fix: Send notifications on full/incr backup
+
 # 0.5.0 / 2016-05-23
 
   * Added more tests, fixed some linter errors
