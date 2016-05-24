@@ -28,6 +28,8 @@ var (
 	notifyCommands = []string{
 		commandBackup,
 		commandRemove,
+		commandFullBackup,
+		commandIncrBackup,
 	}
 	removeCommands = []string{
 		commandBackup,
