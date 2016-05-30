@@ -23,8 +23,10 @@ var (
 
 		RestoreTime string `flag:"time,t" description:"The time from which to restore or list files"`
 
-		DryRun         bool `flag:"dry-run,n" default:"false" description:"Do a test-run without changes"`
-		Debug          bool `flag:"debug,d" default:"false" description:"Print duplicity commands to output"`
+		DryRun bool `flag:"dry-run,n" default:"false" description:"Do a test-run without changes"`
+		Debug  bool `flag:"debug,d" default:"false" description:"Print duplicity commands to output"`
+		Silent bool `flag:"silent,s" default:"false" description:"Do not print to stdout, only write to logfile (for example usefull for crons)"`
+
 		VersionAndExit bool `flag:"version" default:"false" description:"Print version and exit"`
 	}{}
 
@@ -62,7 +64,9 @@ func logf(pattern string, fields ...interface{}) {
 	t := time.Now().Format("2006-01-02 15:04:05")
 	pattern = fmt.Sprintf("(%s) ", t) + pattern + "\n"
 	fmt.Fprintf(logFile, pattern, fields...)
-	fmt.Printf(pattern, fields...)
+	if !cfg.Silent {
+		fmt.Printf(pattern, fields...)
+	}
 }
 
 func main() {
