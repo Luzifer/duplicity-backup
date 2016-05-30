@@ -1,3 +1,7 @@
+# 0.6.0 / 2016-05-30
+
+  * Added silent flag
+
 # 0.5.1 / 2016-05-24
 
   * Fix: Send notifications on full/incr backup
