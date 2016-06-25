@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
+	"text/template"
 
 	valid "github.com/asaskevich/govalidator"
 	"gopkg.in/yaml.v2"
@@ -126,9 +128,33 @@ func (c *configFile) validate() error {
 	return nil
 }
 
+func getTemplateFuncMap() template.FuncMap {
+	return template.FuncMap{
+		"env": func(name string, v ...string) string {
+			defaultValue := ""
+			if len(v) > 0 {
+				defaultValue = v[0]
+			}
+			if value, ok := os.LookupEnv(name); ok {
+				return value
+			}
+			return defaultValue
+		},
+	}
+}
+
 func loadConfigFile(in io.Reader) (*configFile, error) {
 	fileContent, err := ioutil.ReadAll(in)
 	if err != nil {
+		return nil, err
+	}
+
+	buf := bytes.NewBuffer([]byte{})
+	tpl, err := template.New("config file").Funcs(getTemplateFuncMap()).Parse(string(fileContent))
+	if err != nil {
+		return nil, err
+	}
+	if err := tpl.Execute(buf, nil); err != nil {
 		return nil, err
 	}
 
@@ -137,7 +163,7 @@ func loadConfigFile(in io.Reader) (*configFile, error) {
 	res := &configFile{
 		Hostname: hostname,
 	}
-	if err := yaml.Unmarshal(fileContent, res); err != nil {
+	if err := yaml.Unmarshal(buf.Bytes(), res); err != nil {
 		return nil, err
 	}
 
