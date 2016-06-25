@@ -1,3 +1,7 @@
+# 0.8.0 / 2016-06-26
+
+  * Added "list-changed-files" command
+
 # 0.7.0 / 2016-06-25
 
   * Allow using of env template function
