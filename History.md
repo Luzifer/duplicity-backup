@@ -1,3 +1,7 @@
+# 0.7.0 / 2016-06-25
+
+  * Allow using of env template function
+
 # 0.6.0 / 2016-05-30
 
   * Added silent flag
