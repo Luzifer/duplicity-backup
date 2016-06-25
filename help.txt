@@ -7,6 +7,7 @@ Available Commands:
   backup / incr                 Create backup according to the backup rules
   full                          Forces the creation of a full backup
   cleanup                       Delete the extraneous duplicity files
+  list-changed-files            Lists the files changed since last backup
   list-current-files            Lists the files contained in the backup
   restore [file path] [target]  Restores single file / dir to target directory
   restore [target]              Restores everything to target directory

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -142,8 +143,9 @@ func execute(config *configFile, argv []string) error {
 	var (
 		err                 error
 		commandLine, tmpEnv []string
+		logFilter           *regexp.Regexp
 	)
-	commandLine, tmpEnv, err = config.GenerateCommand(argv, cfg.RestoreTime)
+	commandLine, tmpEnv, logFilter, err = config.GenerateCommand(argv, cfg.RestoreTime)
 	if err != nil {
 		logf("[ERR] %s", err)
 		return err
@@ -166,11 +168,13 @@ func execute(config *configFile, argv []string) error {
 	}
 
 	msgChan := make(chan string, 10)
-	go func(c chan string) {
+	go func(c chan string, logFilter *regexp.Regexp) {
 		for l := range c {
-			logf(l)
+			if logFilter == nil || logFilter.MatchString(l) {
+				logf(l)
+			}
 		}
-	}(msgChan)
+	}(msgChan, logFilter)
 
 	output := newMessageChanWriter(msgChan)
 	cmd := exec.Command(duplicityBinary, commandLine...)

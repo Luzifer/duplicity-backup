@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"text/template"
 
@@ -15,15 +16,16 @@ import (
 )
 
 const (
-	commandBackup     = "backup"
-	commandFullBackup = "full"
-	commandIncrBackup = "incr"
-	commandCleanup    = "cleanup"
-	commandList       = "list-current-files"
-	commandRestore    = "restore"
-	commandStatus     = "status"
-	commandVerify     = "verify"
-	commandRemove     = "__remove_old"
+	commandBackup           = "backup"
+	commandFullBackup       = "full"
+	commandIncrBackup       = "incr"
+	commandCleanup          = "cleanup"
+	commandList             = "list-current-files"
+	commandRestore          = "restore"
+	commandStatus           = "status"
+	commandVerify           = "verify"
+	commandRemove           = "__remove_old"
+	commandListChangedFiles = "list-changed-files"
 )
 
 var (
@@ -170,7 +172,7 @@ func loadConfigFile(in io.Reader) (*configFile, error) {
 	return res, res.validate()
 }
 
-func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []string, env []string, err error) {
+func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []string, env []string, logfilter *regexp.Regexp, err error) {
 	var (
 		tmpEnv             []string
 		option, root, dest string
@@ -184,6 +186,13 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 		root = c.RootPath
 		dest = c.Destination
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
+	case commandListChangedFiles:
+		option = ""
+		root = c.RootPath
+		dest = c.Destination
+		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
+		commandLine = append([]string{"--dry-run", "--verbosity", "8"}, commandLine...)
+		logfilter = regexp.MustCompile(`^[ADM] `)
 	case commandFullBackup:
 		option = command
 		root = c.RootPath
