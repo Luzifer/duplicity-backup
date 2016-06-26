@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"regexp"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,6 +30,7 @@ logdir: /var/log/duplicity/
 
 	var (
 		commandLine, env, argv []string
+		logFilter              *regexp.Regexp
 		loadErr, err           error
 		t                      string
 		cf                     *configFile
@@ -40,7 +42,7 @@ logdir: /var/log/duplicity/
 		if loadErr != nil {
 			panic(loadErr)
 		}
-		commandLine, env, err = cf.GenerateCommand(argv, t)
+		commandLine, env, logFilter, err = cf.GenerateCommand(argv, t)
 	})
 
 	Context("Backup with given config", func() {
