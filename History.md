@@ -1,3 +1,7 @@
+# 0.8.1 / 2016-06-26
+
+  * Fix test after API change
+
 # 0.8.0 / 2016-06-26
 
   * Added "list-changed-files" command
