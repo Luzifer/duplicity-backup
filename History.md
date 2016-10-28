@@ -1,3 +1,8 @@
+# 0.8.2 / 2016-10-28
+
+  * Remove GoBuild button as releases are now sent to Github
+  * Push releases to Github
+
 # 0.8.1 / 2016-06-26
 
   * Fix test after API change
