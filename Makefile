@@ -1,6 +1,9 @@
 bindata:
 		go-bindata help.txt
 
+ci:
+	./publish.sh
+
 setup-testenv:
 		go get github.com/onsi/ginkgo/ginkgo
 		go get github.com/onsi/gomega
