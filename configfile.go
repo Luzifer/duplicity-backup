@@ -160,7 +160,7 @@ func loadConfigFile(in io.Reader) (*configFile, error) {
 		return nil, err
 	}
 
-	hostname, _ := os.Hostname()
+	hostname, _ := os.Hostname() // #nosec G104
 
 	res := &configFile{
 		Hostname: hostname,
@@ -221,8 +221,8 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 		} else if len(argv) == 2 {
 			dest = argv[1]
 		} else {
-			err = errors.New("You need to specify one ore more parameters. See help message.")
-			return
+			err = errors.New("You need to specify one or more parameters: See help message")
+			return commandLine, env, logfilter, err
 		}
 
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, restoreFile)
@@ -237,8 +237,8 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 	case commandRemove:
 		commandLine, env, err = c.generateRemoveCommand()
 	default:
-		err = fmt.Errorf("Did not understand command '%s', please see 'help' for details what to do.", command)
-		return
+		err = fmt.Errorf("Did not understand command '%s', please see 'help' for details what to do", command)
+		return commandLine, env, logfilter, err
 	}
 
 	// Add destination credentials
@@ -248,20 +248,24 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 	commandLine = c.cleanSlice(commandLine)
 	env = c.cleanSlice(env)
 
-	return
+	return commandLine, env, logfilter, err
 }
 
-func (c *configFile) cleanSlice(in []string) (out []string) {
+func (c *configFile) cleanSlice(in []string) []string {
+	out := []string{}
+
 	for _, i := range in {
 		if i != "" {
 			out = append(out, i)
 		}
 	}
 
-	return
+	return out
 }
 
-func (c *configFile) generateCredentialExport() (env []string) {
+func (c *configFile) generateCredentialExport() []string {
+	env := []string{}
+
 	if c.AWS.AccessKeyID != "" {
 		env = append(env, "AWS_ACCESS_KEY_ID="+c.AWS.AccessKeyID)
 		env = append(env, "AWS_SECRET_ACCESS_KEY="+c.AWS.SecretAccessKey)
@@ -280,11 +284,11 @@ func (c *configFile) generateCredentialExport() (env []string) {
 		env = append(env, "FTP_PASSWORD="+c.FTPPassword)
 	}
 
-	return
+	return env
 }
 
-func (c *configFile) generateRemoveCommand() (commandLine []string, env []string, err error) {
-	var tmpArg, tmpEnv []string
+func (c *configFile) generateRemoveCommand() ([]string, []string, error) {
+	var commandLine, env, tmpArg, tmpEnv []string
 	// Assemble command
 	commandLine = append(commandLine, c.Cleanup.Type, c.Cleanup.Value)
 	// Static Options
@@ -298,11 +302,11 @@ func (c *configFile) generateRemoveCommand() (commandLine []string, env []string
 	// Remote repo
 	commandLine = append(commandLine, c.Destination)
 
-	return
+	return commandLine, env, nil
 }
 
-func (c *configFile) generateLiteCommand(option, time string, addTime bool) (commandLine []string, env []string, err error) {
-	var tmpArg, tmpEnv []string
+func (c *configFile) generateLiteCommand(option, time string, addTime bool) ([]string, []string, error) {
+	var commandLine, env, tmpArg, tmpEnv []string
 	// Assemble command
 	commandLine = append(commandLine, option)
 	// Static Options
@@ -317,11 +321,11 @@ func (c *configFile) generateLiteCommand(option, time string, addTime bool) (com
 	// Remote repo
 	commandLine = append(commandLine, c.Destination)
 
-	return
+	return commandLine, env, nil
 }
 
-func (c *configFile) generateFullCommand(option, time, root, dest string, addTime bool, restoreFile string) (commandLine []string, env []string, err error) {
-	var tmpArg, tmpEnv []string
+func (c *configFile) generateFullCommand(option, time, root, dest string, addTime bool, restoreFile string) ([]string, []string, error) {
+	var commandLine, env, tmpArg, tmpEnv []string
 	// Assemble command
 	commandLine = append(commandLine, option)
 	// Static Options
@@ -345,10 +349,12 @@ func (c *configFile) generateFullCommand(option, time, root, dest string, addTim
 	// Source / Destination
 	commandLine = append(commandLine, root, dest)
 
-	return
+	return commandLine, env, nil
 }
 
-func (c *configFile) generateIncludeExclude() (arguments []string, env []string) {
+func (c *configFile) generateIncludeExclude() ([]string, []string) {
+	var arguments, env []string
+
 	if c.ExcludeDeviceFiles {
 		arguments = append(arguments, "--exclude-device-files")
 	}
@@ -369,13 +375,15 @@ func (c *configFile) generateIncludeExclude() (arguments []string, env []string)
 		arguments = append(arguments, "--exclude=**")
 	}
 
-	return
+	return arguments, env
 }
 
-func (c *configFile) generateEncryption(command string) (arguments []string, env []string) {
+func (c *configFile) generateEncryption(command string) ([]string, []string) {
+	var arguments, env []string
+
 	if !c.Encryption.Enable {
 		arguments = append(arguments, "--no-encryption")
-		return
+		return arguments, env
 	}
 
 	if c.Encryption.Passphrase != "" {
@@ -398,5 +406,5 @@ func (c *configFile) generateEncryption(command string) (arguments []string, env
 		arguments = append(arguments, "--encrypt-secret-keyring="+c.Encryption.SecretKeyRing)
 	}
 
-	return
+	return arguments, env
 }

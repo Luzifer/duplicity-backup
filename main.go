@@ -26,7 +26,7 @@ var (
 
 		DryRun bool `flag:"dry-run,n" default:"false" description:"Do a test-run without changes"`
 		Debug  bool `flag:"debug,d" default:"false" description:"Print duplicity commands to output"`
-		Silent bool `flag:"silent,s" default:"false" description:"Do not print to stdout, only write to logfile (for example usefull for crons)"`
+		Silent bool `flag:"silent,s" default:"false" description:"Do not print to stdout, only write to logfile (for example useful for crons)"`
 
 		VersionAndExit bool `flag:"version" default:"false" description:"Print version and exit"`
 	}{}
@@ -86,7 +86,7 @@ func main() {
 	// If no command is passed assume we're requesting "help"
 	argv := rconfig.Args()
 	if len(argv) == 1 || argv[1] == "help" {
-		helptext, _ := Asset("help.txt")
+		helptext, _ := Asset("help.txt") // #nosec G104
 		fmt.Println(string(helptext))
 		return
 	}
@@ -103,7 +103,10 @@ func main() {
 	}
 
 	// Initialize logfile
-	os.MkdirAll(config.LogDirectory, 0755)
+	if err := os.MkdirAll(config.LogDirectory, 0750); err != nil {
+		log.Fatalf("Unable to create log dir: %s", err)
+	}
+
 	logFilePath := path.Join(config.LogDirectory, time.Now().Format("duplicity-backup_2006-01-02_15-04-05.txt"))
 	if logFile, err = os.Create(logFilePath); err != nil {
 		log.Fatalf("Unable to open logfile %s: %s", logFilePath, err)
@@ -113,7 +116,7 @@ func main() {
 	logf("++++ duplicity-backup %s started with command '%s'", version, argv[1])
 
 	if err := lock.TryLock(); err != nil {
-		logf("Could not aquire lock: %s", err)
+		logf("Could not acquire lock: %s", err)
 		return
 	}
 	defer lock.Unlock()
@@ -177,7 +180,7 @@ func execute(config *configFile, argv []string) error {
 	}(msgChan, logFilter)
 
 	output := newMessageChanWriter(msgChan)
-	cmd := exec.Command(duplicityBinary, commandLine...)
+	cmd := exec.Command(duplicityBinary, commandLine...) // #nosec G204
 	cmd.Stdout = output
 	cmd.Stderr = output
 	cmd.Env = envMapToList(env)

@@ -15,9 +15,11 @@ func newMessageChanWriter(outputChannel chan string) *messageChanWriter {
 	}
 }
 
-func (m *messageChanWriter) Write(p []byte) (n int, err error) {
-	n = len(p)
-	err = nil
+func (m *messageChanWriter) Write(p []byte) (int, error) {
+	var (
+		n   = len(p)
+		err error
+	)
 
 	m.buffer = append(m.buffer, p...)
 	if strings.Contains(string(m.buffer), "\n") {
@@ -28,5 +30,5 @@ func (m *messageChanWriter) Write(p []byte) (n int, err error) {
 		m.buffer = []byte(lines[len(lines)-1])
 	}
 
-	return
+	return n, err
 }

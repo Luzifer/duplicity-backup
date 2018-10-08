@@ -79,7 +79,7 @@ func (c *configFile) notifyMonDash(success bool, err error) error {
 		c.Hostname,
 	)
 
-	req, _ := http.NewRequest(http.MethodPut, url, buf)
+	req, _ := http.NewRequest(http.MethodPut, url, buf) // #nosec G104
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", c.Notifications.MonDash.Token)
 	res, err := http.DefaultClient.Do(req)
