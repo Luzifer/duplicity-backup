@@ -27,8 +27,37 @@
 
 [[constraint]]
   name = "github.com/Luzifer/go_helpers"
-  version = "1.3.0"
+  version = "2.8.0"
+
+[[constraint]]
+  name = "github.com/Luzifer/rconfig"
+  version = "2.2.0"
+
+[[constraint]]
+  name = "github.com/asaskevich/govalidator"
+  version = "9.0.0"
+
+[[constraint]]
+  name = "github.com/mitchellh/go-homedir"
+  version = "1.0.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/nightlyone/lockfile"
+
+[[constraint]]
+  name = "github.com/onsi/ginkgo"
+  version = "1.6.0"
+
+[[constraint]]
+  name = "github.com/onsi/gomega"
+  version = "1.4.2"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  version = "2.2.1"
 
 [prune]
+  non-go = true
   go-tests = true
   unused-packages = true

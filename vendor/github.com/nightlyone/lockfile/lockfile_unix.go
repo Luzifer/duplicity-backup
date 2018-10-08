@@ -1,4 +1,4 @@
-// +build darwin dragonfly freebsd linux nacl netbsd openbsd solaris
+// +build darwin dragonfly freebsd linux nacl netbsd openbsd solaris aix
 
 package lockfile
 
@@ -7,22 +7,14 @@ import (
 	"syscall"
 )
 
-func isProcessAlive(p *os.Process) error {
-	err := p.Signal(os.Signal(syscall.Signal(0)))
-	if err == nil {
-		return nil
-	}
-	errno, ok := err.(syscall.Errno)
-	if !ok {
-		return ErrDeadOwner
+func isRunning(pid int) (bool, error) {
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		return false, err
 	}
 
-	switch errno {
-	case syscall.ESRCH:
-		return ErrDeadOwner
-	case syscall.EPERM:
-		return nil
-	default:
-		return err
+	if err := proc.Signal(syscall.Signal(0)); err != nil {
+		return false, nil
 	}
+	return true, nil
 }
