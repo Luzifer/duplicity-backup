@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -13,8 +12,11 @@ import (
 	"github.com/Luzifer/go_helpers/str"
 	"github.com/Luzifer/go_helpers/which"
 	"github.com/Luzifer/rconfig"
+	"github.com/rifflock/lfshook"
+
 	"github.com/mitchellh/go-homedir"
 	"github.com/nightlyone/lockfile"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -24,15 +26,14 @@ var (
 
 		RestoreTime string `flag:"time,t" description:"The time from which to restore or list files"`
 
-		DryRun bool `flag:"dry-run,n" default:"false" description:"Do a test-run without changes"`
-		Debug  bool `flag:"debug,d" default:"false" description:"Print duplicity commands to output"`
-		Silent bool `flag:"silent,s" default:"false" description:"Do not print to stdout, only write to logfile (for example useful for crons)"`
+		DryRun   bool   `flag:"dry-run,n" default:"false" description:"Do a test-run without changes"`
+		Silent   bool   `flag:"silent,s" default:"false" description:"Do not print to stdout, only write to logfile (for example useful for crons)"`
+		LogLevel string `flag:"log-level" default:"info" description:"Verbosity of logs to use (debug, info, warning, error, ...)"`
 
 		VersionAndExit bool `flag:"version" default:"false" description:"Print version and exit"`
 	}{}
 
 	duplicityBinary string
-	logFile         *os.File
 
 	version = "dev"
 )
@@ -40,7 +41,7 @@ var (
 func initCFG() {
 	var err error
 	if err = rconfig.Parse(&cfg); err != nil {
-		log.Fatalf("Error while parsing arguments: %s", err)
+		log.WithError(err).Fatal("Error while parsing arguments")
 	}
 
 	if cfg.VersionAndExit {
@@ -48,25 +49,22 @@ func initCFG() {
 		os.Exit(0)
 	}
 
+	if logLevel, err := log.ParseLevel(cfg.LogLevel); err == nil {
+		log.SetLevel(logLevel)
+	} else {
+		log.Fatalf("Unable to parse log level: %s", err)
+	}
+
 	if cfg.ConfigFile, err = homedir.Expand(cfg.ConfigFile); err != nil {
-		log.Fatalf("Unable to expand config-file: %s", err)
+		log.WithError(err).Fatal("Unable to expand config-file")
 	}
 
 	if cfg.LockFile, err = homedir.Expand(cfg.LockFile); err != nil {
-		log.Fatalf("Unable to expand lock: %s", err)
+		log.WithError(err).Fatal("Unable to expand lock")
 	}
 
 	if duplicityBinary, err = which.FindInPath("duplicity"); err != nil {
-		log.Fatalf("Did not find duplicity binary in $PATH, please install it")
-	}
-}
-
-func logf(pattern string, fields ...interface{}) {
-	t := time.Now().Format("2006-01-02 15:04:05")
-	pattern = fmt.Sprintf("(%s) ", t) + pattern + "\n"
-	fmt.Fprintf(logFile, pattern, fields...)
-	if !cfg.Silent {
-		fmt.Printf(pattern, fields...)
+		log.WithError(err).Fatal("Did not find duplicity binary in $PATH, please install it")
 	}
 }
 
@@ -80,7 +78,7 @@ func main() {
 
 	lock, err := lockfile.New(cfg.LockFile)
 	if err != nil {
-		log.Fatalf("Could not initialize lockfile: %s", err)
+		log.WithError(err).Fatal("Could not initialize lockfile")
 	}
 
 	// If no command is passed assume we're requesting "help"
@@ -94,29 +92,33 @@ func main() {
 	// Get configuration
 	configSource, err := os.Open(cfg.ConfigFile)
 	if err != nil {
-		log.Fatalf("Unable to open configuration file %s: %s", cfg.ConfigFile, err)
+		log.WithError(err).Fatalf("Unable to open configuration file %s", cfg.ConfigFile)
 	}
 	defer configSource.Close()
 	config, err = loadConfigFile(configSource)
 	if err != nil {
-		log.Fatalf("Unable to read configuration file: %s", err)
+		log.WithError(err).Fatal("Unable to read configuration file")
 	}
 
 	// Initialize logfile
 	if err := os.MkdirAll(config.LogDirectory, 0750); err != nil {
-		log.Fatalf("Unable to create log dir: %s", err)
+		log.WithError(err).Fatal("Unable to create log dir")
 	}
 
 	logFilePath := path.Join(config.LogDirectory, time.Now().Format("duplicity-backup_2006-01-02_15-04-05.txt"))
-	if logFile, err = os.Create(logFilePath); err != nil {
-		log.Fatalf("Unable to open logfile %s: %s", logFilePath, err)
+	logFile, err := os.Create(logFilePath)
+	if err != nil {
+		log.WithError(err).Fatalf("Unable to open logfile %s", logFilePath)
 	}
 	defer logFile.Close()
 
-	logf("++++ duplicity-backup %s started with command '%s'", version, argv[1])
+	// Hook into logging and write to file
+	log.AddHook(lfshook.NewHook(logFile, nil))
+
+	log.Infof("++++ duplicity-backup %s started with command '%s'", version, argv[1])
 
 	if err := lock.TryLock(); err != nil {
-		logf("Could not acquire lock: %s", err)
+		log.WithError(err).Error("Could not acquire lock")
 		return
 	}
 	defer lock.Unlock()
@@ -126,7 +128,7 @@ func main() {
 	}
 
 	if config.Cleanup.Type != "none" && str.StringInSlice(argv[1], removeCommands) {
-		logf("++++ Starting removal of old backups")
+		log.Info("++++ Starting removal of old backups")
 
 		if err := execute(config, []string{commandRemove}); err != nil {
 			return
@@ -134,12 +136,12 @@ func main() {
 	}
 
 	if err := config.Notify(argv[1], true, nil); err != nil {
-		logf("[ERR] Error sending notifications: %s", err)
+		log.WithError(err).Error("Error sending notifications")
 	} else {
-		logf("[INF] Notifications sent")
+		log.Info("Notifications sent")
 	}
 
-	logf("++++ Backup finished successfully")
+	log.Info("++++ Backup finished successfully")
 }
 
 func execute(config *configFile, argv []string) error {
@@ -150,7 +152,7 @@ func execute(config *configFile, argv []string) error {
 	)
 	commandLine, tmpEnv, logFilter, err = config.GenerateCommand(argv, cfg.RestoreTime)
 	if err != nil {
-		logf("[ERR] %s", err)
+		log.WithError(err).Error("Unable to generate command")
 		return err
 	}
 
@@ -166,15 +168,13 @@ func execute(config *configFile, argv []string) error {
 		commandLine = append([]string{"--dry-run"}, commandLine...)
 	}
 
-	if cfg.Debug {
-		logf("[DBG] Command: %s %s", duplicityBinary, strings.Join(commandLine, " "))
-	}
+	log.Debugf("Command: %s %s", duplicityBinary, strings.Join(commandLine, " "))
 
 	msgChan := make(chan string, 10)
 	go func(c chan string, logFilter *regexp.Regexp) {
 		for l := range c {
 			if logFilter == nil || logFilter.MatchString(l) {
-				logf(l)
+				log.Info(l)
 			}
 		}
 	}(msgChan, logFilter)
@@ -189,16 +189,16 @@ func execute(config *configFile, argv []string) error {
 	close(msgChan)
 
 	if err != nil {
-		logf("[ERR] Execution of duplicity command was unsuccessful! (exit-code was non-zero)")
+		log.Error("Execution of duplicity command was unsuccessful! (exit-code was non-zero)")
 	} else {
-		logf("[INF] Execution of duplicity command was successful.")
+		log.Info("Execution of duplicity command was successful.")
 	}
 
 	if err != nil {
 		if nErr := config.Notify(argv[0], false, fmt.Errorf("Could not create backup: %s", err)); nErr != nil {
-			logf("[ERR] Error sending notifications: %s", nErr)
+			log.WithError(err).Error("Error sending notifications")
 		} else {
-			logf("[INF] Notifications sent")
+			log.Info("Notifications sent")
 		}
 	}
 

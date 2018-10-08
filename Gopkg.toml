@@ -61,3 +61,7 @@
   non-go = true
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/rifflock/lfshook"
+  version = "2.4.0"
