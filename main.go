@@ -39,8 +39,7 @@ var (
 )
 
 func initCFG() {
-	var err error
-	if err = rconfig.Parse(&cfg); err != nil {
+	if err := rconfig.Parse(&cfg); err != nil {
 		log.WithError(err).Fatal("Error while parsing arguments")
 	}
 
@@ -55,6 +54,7 @@ func initCFG() {
 		log.Fatalf("Unable to parse log level: %s", err)
 	}
 
+	var err error
 	if cfg.ConfigFile, err = homedir.Expand(cfg.ConfigFile); err != nil {
 		log.WithError(err).Fatal("Unable to expand config-file")
 	}
@@ -101,7 +101,7 @@ func main() {
 	}
 
 	// Initialize logfile
-	if err := os.MkdirAll(config.LogDirectory, 0750); err != nil {
+	if err = os.MkdirAll(config.LogDirectory, 0750); err != nil {
 		log.WithError(err).Fatal("Unable to create log dir")
 	}
 

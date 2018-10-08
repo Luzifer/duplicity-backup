@@ -63,7 +63,7 @@ type configFile struct {
 	} `yaml:"swift"`
 	Include            []string `yaml:"inclist"`
 	Exclude            []string `yaml:"exclist"`
-	IncExcFile         string   `yaml:"incexcfile" valid:"customFileExistsValidator,required"`
+	IncExcFile         string   `yaml:"incexcfile" valid:"customFileExistsValidator"`
 	ExcludeDeviceFiles bool     `yaml:"excdevicefiles"`
 	Encryption         struct {
 		Enable           bool   `yaml:"enable"`
