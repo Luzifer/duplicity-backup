@@ -239,6 +239,7 @@
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "github.com/rifflock/lfshook",
+    "github.com/sirupsen/logrus",
     "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"
