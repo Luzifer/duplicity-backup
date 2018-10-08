@@ -1,8 +1,11 @@
 bindata:
 		go-bindata help.txt
 
-ci:
-	./publish.sh
+ci: publish
+
+publish:
+	curl -sSLo golang.sh https://raw.githubusercontent.com/Luzifer/github-publish/master/golang.sh
+	bash golang.sh
 
 setup-testenv:
 		go get github.com/onsi/ginkgo/ginkgo
