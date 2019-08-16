@@ -47,6 +47,7 @@ type mondashResult struct {
 	Freshness   int64  `json:"freshness"`
 	IgnoreMAD   bool   `json:"ignore_mad"`
 	HideMAD     bool   `json:"hide_mad"`
+	HideValue   bool   `json:"hide_value"`
 }
 
 func (c *configFile) notifyMonDash(success bool, err error) error {
@@ -59,6 +60,7 @@ func (c *configFile) notifyMonDash(success bool, err error) error {
 		Freshness: c.Notifications.MonDash.Freshness,
 		IgnoreMAD: true,
 		HideMAD:   true,
+		HideValue: true,
 	}
 
 	if success {
