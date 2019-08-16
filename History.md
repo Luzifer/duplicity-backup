@@ -1,3 +1,7 @@
+# 0.10.0 / 2019-08-17
+
+  * Hide value in mondash entries
+
 # 0.9.0 / 2018-10-08
 
   * Rework logging
