@@ -182,7 +182,7 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 
 	switch command {
 	case commandBackup:
-		option = ""
+		option = "inc"
 		root = c.RootPath
 		dest = c.Destination
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
