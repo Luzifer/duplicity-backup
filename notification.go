@@ -2,12 +2,17 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Luzifer/go_helpers/str"
+	"github.com/pkg/errors"
 )
+
+const notifyRequestTimeout = 2 * time.Second
 
 func (c *configFile) Notify(command string, success bool, err error) error {
 	if !str.StringInSlice(command, notifyCommands) {
@@ -37,7 +42,7 @@ func (c *configFile) Notify(command string, success bool, err error) error {
 
 		estr = fmt.Sprintf("%s\n- %s", estr, e)
 	}
-	return fmt.Errorf("%d notifiers failed:%s", len(errs), estr)
+	return errors.Errorf("%d notifiers failed:%s", len(errs), estr)
 }
 
 type mondashResult struct {
@@ -50,6 +55,7 @@ type mondashResult struct {
 	HideValue   bool   `json:"hide_value"`
 }
 
+//revive:disable-next-line:flag-parameter // not a flag parameter
 func (c *configFile) notifyMonDash(success bool, err error) error {
 	if c.Notifications.MonDash.BoardURL == "" {
 		return nil
@@ -73,7 +79,7 @@ func (c *configFile) notifyMonDash(success bool, err error) error {
 
 	buf := bytes.NewBuffer([]byte{})
 	if err = json.NewEncoder(buf).Encode(monitoringResult); err != nil {
-		return err
+		return errors.Wrap(err, "encoding request payload")
 	}
 
 	url := fmt.Sprintf("%s/duplicity-%s",
@@ -81,17 +87,25 @@ func (c *configFile) notifyMonDash(success bool, err error) error {
 		c.Hostname,
 	)
 
-	req, _ := http.NewRequest(http.MethodPut, url, buf) // #nosec G104
+	ctx, cancel := context.WithTimeout(context.Background(), notifyRequestTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, buf)
+	if err != nil {
+		return errors.Wrap(err, "creating request")
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", c.Notifications.MonDash.Token)
+
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "executing request")
 	}
-	defer res.Body.Close()
+	defer res.Body.Close() //nolint:errcheck // Will be cleaned by process exit shortly after
 
-	if res.StatusCode != 200 {
-		return fmt.Errorf("Received unexpected status code: %d", res.StatusCode)
+	if res.StatusCode != http.StatusOK {
+		return errors.Errorf("unexpected status code: %d", res.StatusCode)
 	}
 
 	return nil
@@ -104,6 +118,7 @@ type slackResult struct {
 	Text     string `json:"text"`
 }
 
+//revive:disable-next-line:flag-parameter // not a flag parameter
 func (c *configFile) notifySlack(success bool, err error) error {
 	if c.Notifications.Slack.HookURL == "" {
 		return nil
@@ -123,17 +138,27 @@ func (c *configFile) notifySlack(success bool, err error) error {
 
 	buf := bytes.NewBuffer([]byte{})
 	if err = json.NewEncoder(buf).Encode(sr); err != nil {
-		return err
+		return errors.Wrap(err, "encoding payload")
 	}
 
-	res, err := http.Post(c.Notifications.Slack.HookURL, "application/json", buf)
+	ctx, cancel := context.WithTimeout(context.Background(), notifyRequestTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Notifications.Slack.HookURL, buf)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating request")
 	}
-	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
-		return fmt.Errorf("Received unexpected status code: %d", res.StatusCode)
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "executing request")
+	}
+	defer res.Body.Close() //nolint:errcheck // Will be cleaned by process exit shortly after
+
+	if res.StatusCode != http.StatusOK {
+		return errors.Errorf("unexpected status code: %d", res.StatusCode)
 	}
 
 	return nil

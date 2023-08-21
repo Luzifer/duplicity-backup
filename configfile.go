@@ -2,16 +2,15 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strconv"
 	"text/template"
 
 	valid "github.com/asaskevich/govalidator"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -96,11 +95,11 @@ type configFile struct {
 
 func init() {
 	valid.CustomTypeTagMap.Set("customFileExistsValidator", valid.CustomTypeValidator(func(i interface{}, context interface{}) bool {
-		switch v := i.(type) { // this validates a field against the value in another field, i.e. dependent validation
-		case string:
+		if v, ok := i.(string); ok {
 			_, err := os.Stat(v)
 			return v == "" || err == nil
 		}
+
 		return false
 	}))
 }
@@ -108,7 +107,7 @@ func init() {
 func (c *configFile) validate() error {
 	result, err := valid.ValidateStruct(c)
 	if !result || err != nil {
-		return err
+		return errors.Wrap(err, "validating config")
 	}
 
 	if c.Encryption.Enable && c.Encryption.GPGSignKey != "" && c.Encryption.Passphrase == "" {
@@ -146,18 +145,18 @@ func getTemplateFuncMap() template.FuncMap {
 }
 
 func loadConfigFile(in io.Reader) (*configFile, error) {
-	fileContent, err := ioutil.ReadAll(in)
+	fileContent, err := io.ReadAll(in)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "reading config file content")
 	}
 
 	buf := bytes.NewBuffer([]byte{})
 	tpl, err := template.New("config file").Funcs(getTemplateFuncMap()).Parse(string(fileContent))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "parsing config file as template")
 	}
 	if err := tpl.Execute(buf, nil); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "rendering config file template")
 	}
 
 	hostname, _ := os.Hostname() // #nosec G104
@@ -166,12 +165,13 @@ func loadConfigFile(in io.Reader) (*configFile, error) {
 		Hostname: hostname,
 	}
 	if err := yaml.Unmarshal(buf.Bytes(), res); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unmarshalling config")
 	}
 
 	return res, res.validate()
 }
 
+//nolint:funlen // Is just a list of parameter groups
 func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []string, env []string, logfilter *regexp.Regexp, err error) {
 	var (
 		tmpEnv             []string
@@ -186,58 +186,71 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 		root = c.RootPath
 		dest = c.Destination
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
+
 	case commandListChangedFiles:
-		option = ""
+		option = "inc"
 		root = c.RootPath
 		dest = c.Destination
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
 		commandLine = append([]string{"--dry-run", "--verbosity", "8"}, commandLine...)
 		logfilter = regexp.MustCompile(`^[ADM] `)
+
 	case commandFullBackup:
 		option = command
 		root = c.RootPath
 		dest = c.Destination
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
+
 	case commandIncrBackup:
 		option = command
 		root = c.RootPath
 		dest = c.Destination
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
+
 	case commandCleanup:
 		option = command
 		commandLine, env, err = c.generateLiteCommand(option, time, addTime)
+
 	case commandList:
 		option = command
 		commandLine, env, err = c.generateLiteCommand(option, time, addTime)
+
 	case commandRestore:
 		addTime = true
 		option = command
 		root = c.Destination
 		restoreFile := ""
 
-		if len(argv) == 3 {
+		switch len(argv) {
+		case 3: //nolint:gomnd // Simple count of arguments
 			restoreFile = argv[1]
 			dest = argv[2]
-		} else if len(argv) == 2 {
+
+		case 2: //nolint:gomnd // Simple count of arguments
 			dest = argv[1]
-		} else {
+
+		default:
 			err = errors.New("You need to specify one or more parameters: See help message")
 			return commandLine, env, logfilter, err
 		}
 
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, restoreFile)
+
 	case commandStatus:
 		option = "collection-status"
 		commandLine, env, err = c.generateLiteCommand(option, time, addTime)
+
 	case commandVerify:
 		option = command
 		root = c.Destination
 		dest = c.RootPath
 		commandLine, env, err = c.generateFullCommand(option, time, root, dest, addTime, "")
+
 	case commandRemove:
 		commandLine, env, err = c.generateRemoveCommand()
+
 	default:
-		err = fmt.Errorf("Did not understand command '%s', please see 'help' for details what to do", command)
+		err = fmt.Errorf("did not understand command '%s', please see 'help' for details what to do", command)
 		return commandLine, env, logfilter, err
 	}
 
@@ -251,7 +264,7 @@ func (c *configFile) GenerateCommand(argv []string, time string) (commandLine []
 	return commandLine, env, logfilter, err
 }
 
-func (c *configFile) cleanSlice(in []string) []string {
+func (*configFile) cleanSlice(in []string) []string {
 	out := []string{}
 
 	for _, i := range in {
@@ -305,6 +318,7 @@ func (c *configFile) generateRemoveCommand() ([]string, []string, error) {
 	return commandLine, env, nil
 }
 
+//revive:disable-next-line:flag-parameter // Keeping for the sake of simplicity
 func (c *configFile) generateLiteCommand(option, time string, addTime bool) ([]string, []string, error) {
 	var commandLine, env, tmpArg, tmpEnv []string
 	// Assemble command
@@ -324,6 +338,7 @@ func (c *configFile) generateLiteCommand(option, time string, addTime bool) ([]s
 	return commandLine, env, nil
 }
 
+//revive:disable-next-line:flag-parameter // Keeping for the sake of simplicity
 func (c *configFile) generateFullCommand(option, time, root, dest string, addTime bool, restoreFile string) ([]string, []string, error) {
 	var commandLine, env, tmpArg, tmpEnv []string
 	// Assemble command

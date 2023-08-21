@@ -8,7 +8,7 @@ import (
 )
 
 var _ = Describe("Configfile", func() {
-	var config = `---
+	config := `---
 root: /
 hostname: testing
 dest: s3+http://my-backup/myhost/
@@ -62,6 +62,7 @@ logdir: /var/log/duplicity/
 
 		It("should have generated the expected commandLine", func() {
 			Expect(commandLine).To(Equal([]string{
+				"inc",
 				"--full-if-older-than", "7D",
 				"--s3-use-new-style",
 				"--include=/data",
@@ -299,5 +300,4 @@ logdir: /var/log/duplicity/
 			}))
 		})
 	})
-
 })
