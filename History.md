@@ -1,3 +1,10 @@
+# 0.11.0 / 2023-08-21
+
+  * Fix: Duplicity v2.x needs command specified (inc for backup)
+  * [ci] Convert old vendoring to go modules
+  * [ci] Improve code quality, update deps
+  * [ci] Replace deprecated CI
+
 # 0.10.0 / 2019-08-17
 
   * Hide value in mondash entries
