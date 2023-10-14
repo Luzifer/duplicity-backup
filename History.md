@@ -1,3 +1,7 @@
+# 0.11.1 / 2023-10-15
+
+  * Update dependencies
+
 # 0.11.0 / 2023-08-21
 
   * Fix: Duplicity v2.x needs command specified (inc for backup)
