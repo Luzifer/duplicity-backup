@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Luzifer/go_helpers/str"
+	"github.com/Luzifer/go_helpers/v2/str"
 	"github.com/pkg/errors"
 )
 
